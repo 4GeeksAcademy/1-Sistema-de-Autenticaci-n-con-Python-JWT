@@ -10,6 +10,7 @@ from api.models import db
 from api.routes import api
 from api.admin import setup_admin
 from api.commands import setup_commands
+from flask_jwt_extended import JWTManager
 
 # from models import Person
 
@@ -39,6 +40,11 @@ setup_commands(app)
 
 # Add all endpoints form the API with a "api" prefix
 app.register_blueprint(api, url_prefix='/api')
+
+# estas lineas es para confi. la extencion de Flask-JWT-Extended 
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY") # esta clave sera la raiz de todos los token   # ("JWT_SECRET_KEY") esto sale de la variable del .env
+jwt = JWTManager(app)
+
 
 # Handle/serialize errors like a JSON object
 
