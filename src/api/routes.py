@@ -33,13 +33,19 @@ def login():
     email = request.json.get("email", None)
     password = request.json.get("password", None)
     # remplazar con la logica para consultar la base de datos 
+    # tratamos el Error
     if email != "loco@loco" or password != "loco":
         response_body['message'] = "error con el Email o con la Password"
         return response_body, 401  
-    access_token = create_access_token(identity=[email, 'Funciona']) # aqui va  todos los datos que quiero que me devuelta
-    # response_body['access_token'] = "access Token"
-    # response_body['message'] = "Logeado con existo y con el token"
-    return access_token, 200
+    user = {'email': email,
+            'name': 'Carlos',
+            'is_admin': True,
+            'lastname': 'Betancourt'}
+    access_token = create_access_token(identity=['Funciona', user]) # esta sera nuestra respuesta al ser el toquen correcto
+    response_body['access_token'] = access_token
+    response_body['message'] = "Logeado con existo y con el token"
+    response_body['results'] = user
+    return response_body, 200
 
 
 # Segunda ruta para la pagina privada 
@@ -52,3 +58,15 @@ def protected():
     current_user = get_jwt_identity()
     print(current_user)
     return jsonify(logged_in_as=current_user), 200
+
+
+@api.route("/profile", methods=["GET"])
+@jwt_required()
+def profile():
+    response_body = {}
+    current_user = get_jwt_identity()
+    if current_user[1]['name'] == 'Carlos':
+        response_body['message'] = 'Perfil de Carlos, Tiene Acceso'
+        return response_body, 200
+    response_body['message'] = 'Perfil sin acceso'
+    return response_body, 401
