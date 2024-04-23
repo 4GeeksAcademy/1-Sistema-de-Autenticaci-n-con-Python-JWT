@@ -32,23 +32,32 @@ def login():
     response_body = {}
     email = request.json.get("email", None)
     password = request.json.get("password", None)
-    # remplazar con la logica para consultar la base de datos 
-    # tratamos el Error
-    if email != "loco@loco" or password != "loco":
-        response_body['message'] = "error con el Email o con la Password"
-        return response_body, 401  
-    user = {'email': email,
-            'name': 'Carlos',
-            'is_admin': True,
-            'lastname': 'Betancourt'}
-    access_token = create_access_token(identity=['Funciona', user]) # esta sera nuestra respuesta al ser el toquen correcto
-    response_body['access_token'] = access_token
+    # forma de acceder a la base de datos
+    user = db.session.query(User).filter(User.email == email, User.password == password).first()
+    if not user:
+        response_body['message'] = "Error INGRESE bien los datos"
+        return response_body, 401
+    # presentamos y  error 
+    access_token = create_access_token(identity=user.serialize()) # esta sera nuestra respuesta al ser el toquen correcto
+    response_body['access_token'] = access_token # esto me mostrara el token
     response_body['message'] = "Logeado con existo y con el token"
-    response_body['results'] = user
+    response_body['results'] = user.serialize() # una especie de conversor para que la informacion pueda ser mostrada 
+    return response_body, 200
+   
+       
+@api.route("/signup", methods=["POST"])
+def signup():
+    response_body = {}
+    data = request.json
+    user = User(email=data['email'].lower(),
+                password=data['password'],
+                is_active=True)
+    db.session.add(user)
+    db.session.commit()
+    response_body['message'] = 'User created succesfully'
     return response_body, 200
 
 
-# Segunda ruta para la pagina privada 
 # Protect a route with jwt_required, which will kick out requests
 # without a valid JWT present.
 @api.route("/protected", methods=["GET"])
@@ -65,8 +74,8 @@ def protected():
 def profile():
     response_body = {}
     current_user = get_jwt_identity()
-    if current_user[1]['name'] == 'Carlos':
-        response_body['message'] = 'Perfil de Carlos, Tiene Acceso'
+    if current_user['email'] == email:
+        response_body['message'] = 'Tiene Acceso'
         return response_body, 200
     response_body['message'] = 'Perfil sin acceso'
     return response_body, 401
